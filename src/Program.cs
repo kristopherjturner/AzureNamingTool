@@ -47,8 +47,7 @@ builder.Services.AddSwaggerGen(c =>
     c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
 
-// Add services to the container.
-//builder.Services.AddMvcCore().AddApiExplorer();
+// Add services to the container
 builder.Services.AddBlazorDownloadFile();
 builder.Services.AddBlazoredToast();
 builder.Services.AddBlazoredModal();
@@ -82,3 +81,11 @@ app.UseStatusCodePagesWithRedirects("/404");
 
 app.MapControllers();
 app.Run();
+
+
+/// <summary>
+/// Exists so can be used as reference for WebApplicationFactory in tests project
+/// </summary>
+public partial class Program
+{
+}

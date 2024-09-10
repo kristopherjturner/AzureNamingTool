@@ -9,6 +9,7 @@
 @using Microsoft.AspNetCore.WebUtilities
 @using Microsoft.Extensions.Logging
 @using System.Reflection;
+@using Markdig;
 @inject IJSRuntime JsRuntime
 @inject StateContainer state
 @inject ProtectedSessionStorage session
@@ -19,7 +20,7 @@
 <PageTitle>Azure Naming Tool - Admin</PageTitle>
 <div class="card  @theme.ThemeStyle">
     <div class="card-body">
-        <!-- Pop it above the backdrop -->
+        <!-- Pop it above the backdrop  -->
         <div class="@theme.ThemeStyle">
             <div style="float:left;">
                 <h1>
@@ -57,7 +58,7 @@
                                 <span class="oi oi-chevron-bottom" aria-hidden="true"></span> <span class="fw-bold">Version Details</span>
                             </a>
                         </div>
-                        <div class="collapse show card card-body @theme.ThemeStyle" id="versiondetails">
+                        <div class="collapse card card-body @theme.ThemeStyle" id="versiondetails">
                             <div class="mb-3">
                                 <span class="fw-bold">Current version:</span> @appversion (<a href="@releasenotesurl" target="_blank">Release Notes</a>)
                             </div>
@@ -91,8 +92,228 @@
                                 </div>
                             }
                             <div class="mb-3">
-                                <button type="button" class="btn btn-success" @onclick="@(e => SubmitIssue("feature"))" title="Feature Request">Feature Request</button>
-                                <button type="button" class="btn btn-danger" @onclick="@(e => SubmitIssue("bug"))" title="Submit a bug">Submit a bug</button>
+                                <button type="button" class="btn btn-success" @onclick="@(e => SubmitGHTopic("feature"))" title="Feature request">Feature Request</button>
+                                <button type="button" class="btn btn-danger" @onclick="@(e => SubmitGHTopic("bug"))" title="Submit a bug">Submit a bug</button>
+                                <button type="button" class="btn btn-primary" @onclick="@(e => SubmitGHTopic("discussion"))" title="Start a discussion">Start a Discussion</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card mb-3" style="width:auto;">
+                        <h5 class="card-header text-white bg-secondary text-white">
+                            <a class="text-decoration-none text-white" data-bs-toggle="collapse" style="display:block;font-weight:bold;" href="#customization" role="button" aria-expanded="false" aria-controls="customization">
+                                <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Customization
+                            </a>
+                        </h5>
+                        <div class="collapse show card card-body @theme.ThemeStyle" id="customization">
+                            <p>
+                                This section allows your to customize the Azure Naming Tool site. This includes Custom Home content, logo, and navigation links displayed for non-admin users.
+                            </p>
+                            @* <div class="card mb-3" style="width:auto;">
+                        <div class="card-header bg-default text-dark">
+                        <a class="text-decoration-none text-dark" data-bs-toggle="collapse" style="display:block;font-weight:bold;" href="#customtoolname" role="button" aria-expanded="false" aria-controls="customtoolname">
+                        <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Custom Tool Name
+                        </a>
+                        </div>
+                        <div class="collapse show card card-body @theme.ThemeStyle" id="customtoolname">
+                        <p>
+                        You can enter custom <span class="fw-bold">Name</span> for the tool that will be displayed within the site.
+                        </p>
+                        <div class="mb-3">
+                        <div class="fw-bold">Name</div>
+                        <input title="Custom Tool Name" id="customtoolname" class="form-control" type="text" @onchange="@((ui) => { SetFormValue("customtoolname",(string)ui.Value!);})" value="@customtoolname" />
+                        </div>
+                        <div>
+                        <button type="button" class="btn btn-success w-auto" @onclick="@(e => AdminFormAction("customtoolnamesave"))" title="Save Custom Tool Name">Save</button>
+                        <span> </span>
+                        <button type="button" class="btn btn-secondary w-auto" @onclick="@(e => AdminFormAction("customtoolnameclear"))" title="Clear Custom Tool Name">Clear</button>
+                        </div>
+                        </div>
+                        </div> *@
+                            <div class="card mb-3" style="width:auto;">
+                                <div class="card-header bg-default text-dark">
+                                    <a class="text-decoration-none text-dark" data-bs-toggle="collapse" style="display:block;font-weight:bold;" href="#customhomecontent" role="button" aria-expanded="false" aria-controls="customhomecontent">
+                                        <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Custom Home Content
+                                    </a>
+                                </div>
+                                <div class="collapse show card card-body @theme.ThemeStyle" id="customhomecontent">
+                                    <div class="mb-3">
+                                        <p>
+                                            You can enter custom <span class="fw-bold">Markdown</span> content that will be displayed on the <span class="fw-bold">Home</span> page. This can be used to provide additional information to users.
+                                        </p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <MarkdownEditor @bind-Value="@customhomecontent" @ref="mdCustomHomeContent" />
+                                    </div>
+                                    <div>
+                                        <button type="button" class="btn btn-success w-auto" @onclick="@(e => AdminFormAction("customhomecontentsave"))" title="Save Custom Home Content">Save</button>
+                                        <span> </span>
+                                        <button type="button" class="btn btn-secondary w-auto" @onclick="@(e => AdminFormAction("customhomecontentclear"))" title="Clear Custom Home Content">Clear</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card mb-3" style="width:auto;">
+                                <div class="card-header bg-default text-dark">
+                                    <a class="text-decoration-none text-dark" data-bs-toggle="collapse" style="display:block;font-weight:bold;" href="#customlogo" role="button" aria-expanded="false" aria-controls="customlogo">
+                                        <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Custom Logo
+                                    </a>
+                                </div>
+                                <div class="collapse show card card-body @theme.ThemeStyle" id="customlogo">
+                                    <p>
+                                        This section is used to upload a custom logo for the site.
+                                    </p>
+                                    <div class="mb-3">
+                                        <div class="fw-bold">Custom Logo</div>
+                                        @if (!String.IsNullOrEmpty(customlogopath))
+                                        {
+                                            <div class="mb-3">
+                                                <img src="@customlogopath" height="100" alt="Custom Logo" />
+                                            </div>
+                                            <div>
+                                                <button type="button" class="btn btn-danger w-auto" @onclick="@(e => AdminFormAction("customlogopathclear"))" title="Delete Custom Logo">Delete</button>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span style="font-style:italic;">No custom logo uploaded.</span>
+                                        }
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="fw-bold">Upload</div>
+                                        <InputFile OnChange="UploadLogo" class="form-control" />
+                                    </div>
+                                    <div class="alert alert-info show" role="alert">
+                                        <h4 class="mb-3">NOTES</h4>
+                                        <div class="mb-3">
+                                            <ul>
+                                                <li class="mb-3">
+                                                    You may need to refresh the browser for the custom logo to be displayed.
+                                                </li>
+                                                <li class="mb-3">
+                                                    If hosting in a container, uploaded logo images will <span class="fw-bold">NOT</span> be stored in the <span class="fw-bold">/settings</span> folder and will not be persisted. If the container is recreated, you will need to re-upload the logo file.
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card mb-3" style="width:auto;">
+                                <div class="card-header bg-default text-dark">
+                                    <a class="text-decoration-none text-dark" data-bs-toggle="collapse" style="display:block;font-weight:bold;" href="#sitenavigation" role="button" aria-expanded="false" aria-controls="sitenavigation">
+                                        <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Site Navigation
+                                    </a>
+                                </div>
+                                <div class="collapse show card card-body @theme.ThemeStyle" id="sitenavigation">
+                                    <div class="mb-3">
+                                        <p>
+                                            This section allows you to configure what navigation links are displayed for non-admin users.
+                                        </p>
+                                    </div>
+                                    <div class="card mb-3" style="width:auto;">
+                                        <div class="card-header bg-default text-dark">
+                                            <a class="text-decoration-none text-dark" data-bs-toggle="collapse" style="display:block;font-weight:bold;" href="#instructionsenabled" role="button" aria-expanded="false" aria-controls="instructionsenabled">
+                                                <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Instructions
+                                            </a>
+                                        </div>
+                                        <div class="collapse show card card-body @theme.ThemeStyle" id="instructionsenabled">
+                                            <div class="mb-3">
+                                                <p>
+                                                    Enable/Disable the <span class="fw-bold">Instructions</span> page for non-admin users. (Documentation links will still be visible.)
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <label class="switch" title="Instructions Enabled">
+                                                    <input type="checkbox" checked="@instructionsenabled" @oninput='args => SettingChanged(args, "instructionsenabled")'>
+                                                    <span class="slider round"></span>
+                                                </label>
+                                                <span class="align-text-top"> Enable</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card mb-3" style="width:auto;">
+                                        <div class="card-header bg-default text-dark">
+                                            <a class="text-decoration-none text-dark" data-bs-toggle="collapse" style="display:block;font-weight:bold;" href="#configurationenabled" role="button" aria-expanded="false" aria-controls="configurationenabled">
+                                                <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Configuration
+                                            </a>
+                                        </div>
+                                        <div class="collapse show card card-body @theme.ThemeStyle" id="configurationenabled">
+                                            <div class="mb-3">
+                                                <p>
+                                                    Enable/Disable the <span class="fw-bold">Configuration</span> page for non-admin users. (Documentation links will still be visible.)
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <label class="switch" title="Configuration Enabled">
+                                                    <input type="checkbox" checked="@configurationenabled" @oninput='args => SettingChanged(args, "configurationenabled")'>
+                                                    <span class="slider round"></span>
+                                                </label>
+                                                <span class="align-text-top"> Enable</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card mb-3" style="width:auto;">
+                                        <div class="card-header bg-default text-dark">
+                                            <a class="text-decoration-none text-dark" data-bs-toggle="collapse" style="display:block;font-weight:bold;" href="#referenceenabled" role="button" aria-expanded="false" aria-controls="referenceenabled">
+                                                <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Reference
+                                            </a>
+                                        </div>
+                                        <div class="collapse show card card-body @theme.ThemeStyle" id="referenceenabled">
+                                            <div class="mb-3">
+                                                <p>
+                                                    Enable/Disable the <span class="fw-bold">Reference</span> page for non-admin users. (Documentation links will still be visible.)
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <label class="switch" title="Reference Enabled">
+                                                    <input type="checkbox" checked="@referenceenabled" @oninput='args => SettingChanged(args, "referenceenabled")'>
+                                                    <span class="slider round"></span>
+                                                </label>
+                                                <span class="align-text-top"> Enable</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card mb-3" style="width:auto;">
+                                        <div class="card-header bg-default text-dark">
+                                            <a class="text-decoration-none text-dark" data-bs-toggle="collapse" style="display:block;font-weight:bold;" href="#generatednameslogenabled" role="button" aria-expanded="false" aria-controls="generatednameslogenabled">
+                                                <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Generated Names Log
+                                            </a>
+                                        </div>
+                                        <div class="collapse show card card-body @theme.ThemeStyle" id="generatednameslogenabled">
+                                            <div class="mb-3">
+                                                <p>
+                                                    Enable/Disable the <span class="fw-bold">Generated Names Log</span> page for non-admin users. (Documentation links will still be visible.)
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <label class="switch" title="Generated Names Log Enabled">
+                                                    <input type="checkbox" checked="@generatednameslogenabled" @oninput='args => SettingChanged(args, "generatednameslogenabled")'>
+                                                    <span class="slider round"></span>
+                                                </label>
+                                                <span class="align-text-top"> Enable</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card mb-3" style="width:auto;">
+                                        <div class="card-header bg-default text-dark">
+                                            <a class="text-decoration-none text-dark" data-bs-toggle="collapse" style="display:block;font-weight:bold;" href="#latestnewsenabled" role="button" aria-expanded="false" aria-controls="latestnewsenabled">
+                                                <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Latest News
+                                            </a>
+                                        </div>
+                                        <div class="collapse show card card-body @theme.ThemeStyle" id="latestnewsenabled">
+                                            <div class="mb-3">
+                                                <p>
+                                                    Enable/Disable the <span class="fw-bold">Latest News</span> for all users.
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <label class="switch" title="Latest News Enabled">
+                                                    <input type="checkbox" checked="@latestnewsenabled" @oninput='args => SettingChanged(args, "latestnewsenabled")'>
+                                                    <span class="slider round"></span>
+                                                </label>
+                                                <span class="align-text-top"> Enable</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -102,7 +323,10 @@
                                 <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Security
                             </a>
                         </h5>
-                        <div class="collapse show card card-body @theme.ThemeStyle" id="security">
+                        <div class="collapse card card-body @theme.ThemeStyle" id="security">
+                            <p>
+                                This section allows you to update the Global Admin password and API keys for the Azure Naming Tool site.
+                            </p>
                             @if (currentuser == "GlobalAdmin")
                             {
                                 <div class="card mb-3">
@@ -191,15 +415,15 @@
                                 <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Identity Provider Settings
                             </a>
                         </h5>
-                        <div class="collapse show  card card-body @theme.ThemeStyle" id="identityprovidersettings">
+                        <div class="collapse card card-body @theme.ThemeStyle" id="identityprovidersettings">
+                            <p>
+                                This section is used to configure the <span class="fw-bold">Identity Provider</span> settings for the site if authentication is implemented. The Azure Naming Tool is designed to work with <span class="fw-bold"><a href="https://learn.microsoft.com/en-us/azure/app-service/overview-authentication-authorization" target="_blank">Azure App Service Authentication</a></span>, by default. If the Azure Naming Tool is configured to identify users, the site will track user activity. Users can also be designated as Admins using the <span class="fw-bold">Admin Users</span> configuration.
+                            </p>
+                            <p>
+                                You can learn more about the new Identity Provider Integration <a href="https://soltisweb.com/blog/detail/2023-06-azurenamingtool-identityproviderintegrationdeepdive" target="_blank"><span class="fw-bold">HERE</span></a>.
+                            </p>
                             @if (currentuser == "GlobalAdmin")
                             {
-                                <p>
-                                    This section is used to configure the <span class="fw-bold">Identity Provider</span> settings for the site if authentication is implemented. The Azure Naming Tool is designed to work with <span class="fw-bold"><a href="https://learn.microsoft.com/en-us/azure/app-service/overview-authentication-authorization" target="_blank">Azure App Service Authentication</a></span>, by default. If the Azure Naming Tool is configured to identify users, the site will track user activity. Users can also be designated as Admins using the <span class="fw-bold">Admin Users</span> configuration.
-                                </p>
-                                <p>
-                                    You can learn more about the new Identity Provider Integration <a href="https://soltisweb.com/blog/detail/2023-06-azurenamingtool-identityproviderintegrationdeepdive" target="_blank"><span class="fw-bold">HERE</span></a>.
-                                </p>
                                 @if (!String.IsNullOrEmpty(currentidentityprovider))
                                 {
                                     <div class="mb-3">
@@ -333,15 +557,39 @@
                                 <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Cache
                             </a>
                         </h5>
-                        <div class="collapse show  card card-body @theme.ThemeStyle" id="cache">
+                        <div class="collapse card card-body @theme.ThemeStyle" id="cache">
                             <p>
-                                The tool uses caching for data to improve performance. Click <span class="fw-bold">Clear</span> to clear all cached data.
+                                This section allows you to view/manage cached data for the tool.
                             </p>
-                            <div class="form-group">
-                                <p>
-                                    <button type="button" class="btn btn-primary" @onclick="@(e => AdminFormAction("viewcachedata"))" title="View Cache Data">View Cache Data</button>
-                                    <button type="button" class="btn btn-success" @onclick="@(e => AdminFormAction("clearcache"))" title="Clear Cache">Clear Cache Data</button>
-                                </p>
+                            <div class="card mb-3" style="width:auto;">
+                                <div class="card-header bg-default text-dark">
+                                    <a class="text-decoration-none text-dark" data-bs-toggle="collapse" style="display:block;font-weight:bold;" href="#viewcache" role="button" aria-expanded="false" aria-controls="viewcache">
+                                        <span class="oi oi-chevron-bottom" aria-hidden="true"></span> View Cache
+                                    </a>
+                                </div>
+                                <div class="collapse show card card-body @theme.ThemeStyle" id="viewcache">
+                                    <p>
+                                        Click <span class="fw-bold">View</span> to view cached data.
+                                    </p>
+                                    <p>
+                                        <button type="button" class="btn btn-primary" @onclick="@(e => AdminFormAction("viewcachedata"))" title="View Cache Data">View Cache Data</button>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="card mb-3" style="width:auto;">
+                                <div class="card-header bg-default text-dark">
+                                    <a class="text-decoration-none text-dark" data-bs-toggle="collapse" style="display:block;font-weight:bold;" href="#clearcache" role="button" aria-expanded="false" aria-controls="clearcache">
+                                        <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Clear Cache
+                                    </a>
+                                </div>
+                                <div class="collapse show card card-body @theme.ThemeStyle" id="clearcache">
+                                    <p>
+                                        Click <span class="fw-bold">Clear</span> to clear all cached data.
+                                    </p>
+                                    <p>
+                                        <button type="button" class="btn btn-success" @onclick="@(e => AdminFormAction("clearcache"))" title="Clear Cache">Clear Cache Data</button>
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -351,7 +599,10 @@
                                 <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Site Settings
                             </a>
                         </h5>
-                        <div class="collapse show card card-body @theme.ThemeStyle" id="sitesettings">
+                        <div class="collapse card card-body @theme.ThemeStyle" id="sitesettings">
+                            <p>
+                                This section allows you to configure the site settings for the Azure Naming Tool.
+                            </p>
                             <div class="card mb-3" style="width:auto;">
                                 <div class="card-header bg-default text-dark">
                                     <a class="text-decoration-none text-dark" data-bs-toggle="collapse" style="display:block;font-weight:bold;" href="#duplicatenames" role="button" aria-expanded="false" aria-controls="duplicatenames">
@@ -415,69 +666,29 @@
                                     </div>
                                 </div>
                             </div>
+                            <!--// TO DO: Implement retention of the selected values
                             <div class="card mb-3" style="width:auto;">
                                 <div class="card-header bg-default text-dark">
-                                    <a class="text-decoration-none text-dark" data-bs-toggle="collapse" style="display:block;font-weight:bold;" href="#instructionsenabled" role="button" aria-expanded="false" aria-controls="instructionsenabled">
-                                        <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Instructions
+                                    <a class="text-decoration-none text-dark" data-bs-toggle="collapse" style="display:block;font-weight:bold;" href="#retaingenerateselections" role="button" aria-expanded="false" aria-controls="retaingenerateselections">
+                                        <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Retain Generate Selections
                                     </a>
                                 </div>
-                                <div class="collapse show card card-body @theme.ThemeStyle" id="instructionsenabled">
+                                <div class="collapse show card card-body @theme.ThemeStyle" id="retaingenerateselections">
                                     <div class="mb-3">
                                         <p>
-                                            Enable/Disable the <span class="fw-bold">Instructions</span> page for non-admin users. (Documentation links will still be visible.)
+                                            Enable/Disable <span class="fw-bold">Retaining of selections after name generation</span> for all users.
                                         </p>
                                     </div>
                                     <div>
-                                        <label class="switch" title="Instructions Enabled">
-                                            <input type="checkbox" checked="@instructionsenabled" @oninput='args => SettingChanged(args, "instructionsenabled")'>
+                                        <label class="switch" title="Retain Generate Seelctions">
+                                            <input type="checkbox" checked="@retaingenerateselections" @oninput='args => SettingChanged(args, "retaingenerateselections")'>
                                             <span class="slider round"></span>
                                         </label>
                                         <span class="align-text-top"> Enable</span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="card mb-3" style="width:auto;">
-                                <div class="card-header bg-default text-dark">
-                                    <a class="text-decoration-none text-dark" data-bs-toggle="collapse" style="display:block;font-weight:bold;" href="#generatednameslogdenabled" role="button" aria-expanded="false" aria-controls="generatednameslogdenabled">
-                                        <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Generated Names Log
-                                    </a>
-                                </div>
-                                <div class="collapse show card card-body @theme.ThemeStyle" id="generatednameslogdenabled">
-                                    <div class="mb-3">
-                                        <p>
-                                            Enable/Disable the <span class="fw-bold">Generated Names Log</span> page for non-admin users.
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <label class="switch" title="Resource Type Editing Enabled">
-                                            <input type="checkbox" checked="@generatednameslogenabled" @oninput='args => SettingChanged(args, "generatednameslogenabled")'>
-                                            <span class="slider round"></span>
-                                        </label>
-                                        <span class="align-text-top"> Enable</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card mb-3" style="width:auto;">
-                                <div class="card-header bg-default text-dark">
-                                    <a class="text-decoration-none text-dark" data-bs-toggle="collapse" style="display:block;font-weight:bold;" href="#latestnewsenabled" role="button" aria-expanded="false" aria-controls="latestnewsenabled">
-                                        <span class="oi oi-chevron-bottom" aria-hidden="true"></span> Latest News
-                                    </a>
-                                </div>
-                                <div class="collapse show card card-body @theme.ThemeStyle" id="latestnewsenabled">
-                                    <div class="mb-3">
-                                        <p>
-                                            Enable/Disable the <span class="fw-bold">Latest News</span> for all users.
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <label class="switch" title="Latest News Enabled">
-                                            <input type="checkbox" checked="@latestnewsenabled" @oninput='args => SettingChanged(args, "latestnewsenabled")'>
-                                            <span class="slider round"></span>
-                                        </label>
-                                        <span class="align-text-top"> Enable</span>
-                                    </div>
-                                </div>
-                            </div>
+                             -->
                             <div class="card mb-3" style="width:auto;">
                                 <div class="card-header bg-default text-dark">
                                     <a class="text-decoration-none text-dark" data-bs-toggle="collapse" style="display:block;font-weight:bold;" href="#connectivitycheck" role="button" aria-expanded="false" aria-controls="connectivitycheck">
@@ -535,7 +746,7 @@
                                 <div class="collapse show card card-body @theme.ThemeStyle" id="resetsitesettings">
                                     <div class="mb-3">
                                         <p>
-                                            This will reset all site settings to the default values. This cannot be undone!
+                                            This will reset <span class="fw-bold">ALL</span> site settings to the default values. This includes site settings and cusomtizations. This cannot be undone!
                                         </p>
                                     </div>
                                     <div class="mb-3">
@@ -550,7 +761,7 @@
             <div>
                 @if (!admin)
                 {
-                    <button type="button" class="btn btn-success" @onclick="@(e => AdminFormAction("login"))" title="Login">Login</button>
+                    <button type="submit" class="btn btn-success" @onclick="@(e => AdminFormAction("login"))" title="Login">Login</button>
                 }
             </div>
         </div>
@@ -582,7 +793,14 @@
     private bool autoincrementresourceinstance = false;
     private bool instructionsenabled = false;
     private bool generatednameslogenabled = false;
+    private bool configurationenabled = false;
+    private bool referenceenabled = false;
     private bool latestnewsenabled = false;
+    private bool retaingenerateselections = false;
+    private string customhomecontent = String.Empty;
+    MarkdownEditor mdCustomHomeContent = new();
+    private string customlogopath = String.Empty;
+    private string customtoolname = String.Empty;
     private string currentgenerationwebhook = String.Empty;
     private string versionalert = String.Empty;
     private string appversion = String.Empty;
@@ -590,6 +808,9 @@
     private string currentuser = String.Empty;
     private List<KeyValuePair<string, string>> environmentvariables = new();
     private string releasenotesurl = String.Empty;
+    private long maxFileSize = 2000000;
+    private int maxAllowedFiles = 1;
+    private bool isLoading;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -616,7 +837,14 @@
                 autoincrementresourceinstance = Convert.ToBoolean(ConfigurationHelper.GetAppSetting("AutoIncrementResourceInstance"));
                 instructionsenabled = Convert.ToBoolean(ConfigurationHelper.GetAppSetting("InstructionsEnabled"));
                 generatednameslogenabled = Convert.ToBoolean(ConfigurationHelper.GetAppSetting("GeneratedNamesLogEnabled"));
+                configurationenabled = Convert.ToBoolean(ConfigurationHelper.GetAppSetting("ConfigurationEnabled"));
+                referenceenabled = Convert.ToBoolean(ConfigurationHelper.GetAppSetting("ReferenceEnabled"));
                 latestnewsenabled = Convert.ToBoolean(ConfigurationHelper.GetAppSetting("LatestNewsEnabled"));
+                retaingenerateselections = Convert.ToBoolean(ConfigurationHelper.GetAppSetting("RetainGenerateSelections"));
+                customhomecontent = ConfigurationHelper.GetAppSetting("CustomHomeContent", false);
+                //await mdCustomHomeContent.SetValueAsync(customhomecontent);
+                customlogopath = ConfigurationHelper.GetAppSetting("CustomLogoPath", false);
+                customtoolname = ConfigurationHelper.GetAppSetting("CustomToolName", false);
                 currentgenerationwebhook = ConfigurationHelper.GetAppSetting("GenerationWebhook", true);
                 currentidentityheadername = ConfigurationHelper.GetAppSetting("IdentityHeaderName", true);
                 if (GeneralHelper.IsNotNull(identityProviderDetails))
@@ -653,7 +881,7 @@
                 HideCloseButton = true,
                 UseCustomLayout = true
             };
-        var workingmodal = Modal.Show<WorkingModal>("Working", workingmodaloptions);
+        var workingmodal = Modal!.Show<WorkingModal>("Working", workingmodaloptions);
         message = new ResponseMessage();
         message.Header = "INFORMATION";
         message.Type = MessageTypesEnum.INFORMATION;
@@ -880,6 +1108,95 @@
                     displaymessage = false;
                 }
                 break;
+            case "customhomecontentsave":
+                confirm = await ModalHelper.ShowConfirmationModal(Modal!, "ATTENTION", "<div class=\"my-4\">This will update the Custom Home content.</div><div class=\"my-4\">Are you sure?</div>", "bg-primary", theme);
+                if (confirm)
+                {
+                    ConfigurationHelper.SetAppSetting("CustomHomeContent", customhomecontent, false);
+                    await mdCustomHomeContent.SetValueAsync(customhomecontent);
+                    message.Type = MessageTypesEnum.SUCCESS;
+                    message.Header = "SUCCESS";
+                    message.Message = "Custom Home content saved!";
+                }
+                else
+                {
+                    displaymessage = false;
+                }
+                break;
+            case "customhomecontentclear":
+                confirm = await ModalHelper.ShowConfirmationModal(Modal!, "ATTENTION", "<div class=\"my-4\">This will clear the Custom Home content.</div><div class=\"my-4\">Are you sure?</div>", "bg-danger", theme);
+                if (confirm)
+                {
+                    ConfigurationHelper.SetAppSetting("CustomHomeContent", String.Empty, false);
+                    customhomecontent = String.Empty;
+                    await mdCustomHomeContent.SetValueAsync(customhomecontent);
+                    message.Type = MessageTypesEnum.SUCCESS;
+                    message.Header = "SUCCESS";
+                    message.Message = "Custom Home content cleared!";
+                }
+                else
+                {
+                    displaymessage = false;
+                }
+                break;
+            case "customlogopathsave":
+                confirm = await ModalHelper.ShowConfirmationModal(Modal!, "ATTENTION", "<div class=\"my-4\">This will update the Custom Logo.</div><div class=\"my-4\">Are you sure?</div>", "bg-primary", theme);
+                if (confirm)
+                {
+                    ConfigurationHelper.SetAppSetting("CustomLogoPath", customlogopath, false);
+                    message.Type = MessageTypesEnum.SUCCESS;
+                    message.Header = "SUCCESS";
+                    message.Message = "Custom Logo saved!";
+                }
+                else
+                {
+                    displaymessage = false;
+                }
+                break;
+            case "customlogopathclear":
+                confirm = await ModalHelper.ShowConfirmationModal(Modal!, "ATTENTION", "<div class=\"my-4\">This will clear the Custom Logo.</div><div class=\"my-4\">Are you sure?</div>", "bg-danger", theme);
+                if (confirm)
+                {
+                    ConfigurationHelper.SetAppSetting("CustomLogoPath", String.Empty, false);
+                    customlogopath = String.Empty;
+                    message.Type = MessageTypesEnum.SUCCESS;
+                    message.Header = "SUCCESS";
+                    message.Message = "Custom Logo cleared!";
+                }
+                else
+                {
+                    displaymessage = false;
+                }
+                break;
+            case "customtoolnamesave":
+                confirm = await ModalHelper.ShowConfirmationModal(Modal!, "ATTENTION", "<div class=\"my-4\">This will update the Custom Tool Name.</div><div class=\"my-4\">Are you sure?</div>", "bg-primary", theme);
+                if (confirm)
+                {
+                    ConfigurationHelper.SetAppSetting("CustomToolName", customtoolname, false);
+                    message.Type = MessageTypesEnum.SUCCESS;
+                    message.Header = "SUCCESS";
+                    message.Message = "Custom Tool Name saved!";
+                }
+                else
+                {
+                    displaymessage = false;
+                }
+                break;
+            case "customtoolnameclear":
+                confirm = await ModalHelper.ShowConfirmationModal(Modal!, "ATTENTION", "<div class=\"my-4\">This will clear the Custom Tool Name.</div><div class=\"my-4\">Are you sure?</div>", "bg-danger", theme);
+                if (confirm)
+                {
+                    ConfigurationHelper.SetAppSetting("CustomToolName", String.Empty, false);
+                    customtoolname = String.Empty;
+                    message.Type = MessageTypesEnum.SUCCESS;
+                    message.Header = "SUCCESS";
+                    message.Message = "Custom Tool Name cleared!";
+                }
+                else
+                {
+                    displaymessage = false;
+                }
+                break;
             case "clearcache":
                 CacheHelper.ClearAllCache();
                 message.Type = MessageTypesEnum.SUCCESS;
@@ -933,7 +1250,7 @@
                 break;
 
             case "resetsitesettings":
-                confirm = await ModalHelper.ShowConfirmationModal(Modal!, "ATTENTION", "<div class=\"my-4\">This will reset the site settings.</div><div class=\"my-4\">Are you sure?</div>", "bg-danger", theme);
+                confirm = await ModalHelper.ShowConfirmationModal(Modal!, "ATTENTION", "<div class=\"my-4\">This will reset <span class=\"fw-bold\">ALL</span> site settings. This includes site settings and cusomtizations.</div><div class=\"my-4\">Are you sure?</div>", "bg-danger", theme);
                 if (confirm)
                 {
                     // Create new default configuration
@@ -943,10 +1260,17 @@
                     ConfigurationHelper.SetAppSetting("ResourceTypeEditingAllowed", resetconfig.ResourceTypeEditingAllowed!, false);
                     ConfigurationHelper.SetAppSetting("InstructionsEnabled", resetconfig.InstructionsEnabled!, false);
                     ConfigurationHelper.SetAppSetting("GeneratedNamesLogEnabled", resetconfig.GeneratedNamesLogEnabled!, false);
+                    ConfigurationHelper.SetAppSetting("ConfigurationEnabled", resetconfig.ConfigurationEnabled!, false);
+                    ConfigurationHelper.SetAppSetting("ReferenceEnabled", resetconfig.ReferenceEnabled!, false);
                     ConfigurationHelper.SetAppSetting("LatestNewsEnabled", resetconfig.LatestNewsEnabled!, false);
+                    ConfigurationHelper.SetAppSetting("RetainGenerateSelections", resetconfig.RetainGenerateSelections!, false);
+                    ConfigurationHelper.SetAppSetting("CustomHomeContent", String.Empty, false);
+                    ConfigurationHelper.SetAppSetting("CustomLogoPath", String.Empty, false);
+                    ConfigurationHelper.SetAppSetting("CustomToolName", String.Empty, false);
                     ConfigurationHelper.SetAppSetting("ConnectivityCheckEnabled", resetconfig.ConnectivityCheckEnabled!, false);
                     ConfigurationHelper.SetAppSetting("GenerationWebhook", String.Empty, true);
-                    NavigationManager.NavigateTo("/admin?reset=true", true);
+                    AdminLogService.PostItem(new AdminLogMessage() { Title = MessageTypesEnum.SUCCESS.ToString(), Message = "Site Settings reset!", Source = currentuser });
+                    NavigationManager.NavigateTo("admin?reset=true", true);
                 }
                 else
                 {
@@ -993,7 +1317,7 @@
             }
             else
             {
-                NavigationManager.NavigateTo("/", true);
+                NavigationManager.NavigateTo("", true);
             }
         }
 
@@ -1029,6 +1353,9 @@
                 break;
             case "generationwebhook":
                 currentgenerationwebhook = value;
+                break;
+            case "customtoolname":
+                customtoolname = value;
                 break;
         }
     }
@@ -1098,11 +1425,32 @@
                             message.Message = "Generated Names Log Enabled setting updated to " + e.Value?.ToString()!.ToUpper() ?? "" + "!";
                         }
                         break;
+                    case "configurationenabled":
+                        if (GeneralHelper.IsNotNull(e.Value))
+                        {
+                            ConfigurationHelper.SetAppSetting("ConfigurationEnabled", e.Value!.ToString() ?? "");
+                            message.Message = "Configuration Enabled setting updated to " + e.Value?.ToString()!.ToUpper() ?? "" + "!";
+                        }
+                        break;
+                    case "referenceenabled":
+                        if (GeneralHelper.IsNotNull(e.Value))
+                        {
+                            ConfigurationHelper.SetAppSetting("ReferenceEnabled", e.Value!.ToString() ?? "");
+                            message.Message = "Reference Enabled setting updated to " + e.Value?.ToString()!.ToUpper() ?? "" + "!";
+                        }
+                        break;
                     case "latestnewsenabled":
                         if (GeneralHelper.IsNotNull(e.Value))
                         {
                             ConfigurationHelper.SetAppSetting("LatestNewsEnabled", e.Value!.ToString() ?? "");
                             message.Message = "Latest News Enabled setting updated to " + e.Value?.ToString()!.ToUpper() ?? "" + "!";
+                        }
+                        break;
+                    case "retaingenerateselections":
+                        if (GeneralHelper.IsNotNull(e.Value))
+                        {
+                            ConfigurationHelper.SetAppSetting("RetainGenerateSelections", e.Value!.ToString() ?? "");
+                            message.Message = "Retain Generate Selections setting updated to " + e.Value?.ToString()!.ToUpper() ?? "" + "!";
                         }
                         break;
                 }
@@ -1156,22 +1504,74 @@
         }
     }
 
-    private async void SubmitIssue(string type)
+    private async void SubmitGHTopic(string type)
     {
-        string issueURL = "";
+        string githubURL = "";
         switch (type)
         {
             case "bug":
-                issueURL = "https://github.com/mspnp/AzureNamingTool/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=";
+                githubURL = "https://github.com/mspnp/AzureNamingTool/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=";
                 break;
             case "feature":
-                issueURL = "https://github.com/mspnp/AzureNamingTool/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=";
+                githubURL = "https://github.com/mspnp/AzureNamingTool/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=";
                 break;
-
+            case "discussion":
+                githubURL = "https://github.com/mspnp/AzureNamingTool/discussions/new/choose";
+                break;
         }
-        if (!String.IsNullOrEmpty(issueURL))
+        if (!String.IsNullOrEmpty(githubURL))
         {
-            await JsRuntime.InvokeVoidAsync("open", issueURL, "_blank");
+            await JsRuntime.InvokeVoidAsync("open", githubURL, "_blank");
         }
+    }
+
+    private async void UploadLogo(InputFileChangeEventArgs e)
+    {
+        message = new ResponseMessage();
+        message.Header = "INFORMATION";
+        message.Type = MessageTypesEnum.INFORMATION;
+        var workingmodaloptions = new ModalOptions()
+            {
+                HideCloseButton = true,
+                UseCustomLayout = true
+            };
+        var workingmodal = Modal!.Show<WorkingModal>("Working", workingmodaloptions);
+        try
+        {
+
+            var trustedFileName = Path.GetRandomFileName();
+            await using FileStream fs = new(Path.Combine(Environment.CurrentDirectory, "wwwroot/images/" + e.File.Name), FileMode.Create);
+            await e.File.OpenReadStream(maxFileSize).CopyToAsync(fs);
+            ConfigurationHelper.SetAppSetting("CustomLogoPath", "images/" + e.File.Name ?? "");
+            customlogopath = "images/" + e.File.Name;
+            message.Message = "Custom Logo uploaded!";
+        }
+        catch (Exception ex)
+        {
+            AdminLogService.PostItem(new AdminLogMessage() { Title = "ERROR", Message = ex.Message });
+            message.Message = "There was a problem uploading the custom logo!";
+            message.Header = "ERROR";
+        }
+        workingmodal.Close();
+        if (GeneralHelper.IsNotNull(message.Message))
+        {
+            switch (message.Type)
+            {
+                case MessageTypesEnum.INFORMATION:
+                    toastService.ShowInfo(message.Message);
+                    break;
+                case MessageTypesEnum.SUCCESS:
+                    toastService.ShowSuccess(message.Message);
+                    break;
+                case MessageTypesEnum.WARNING:
+                    toastService.ShowWarning(message.Message);
+                    break;
+                case MessageTypesEnum.ERROR:
+                    toastService.ShowError(message.Message);
+                    break;
+            }
+            AdminLogService.PostItem(new AdminLogMessage() { Title = message.Type.ToString(), Message = message.Message, Source = currentuser });
+        }
+        StateHasChanged();
     }
 }
